@@ -1,0 +1,20 @@
+<project>
+   <modelVersion>4.0.0</modelVersion>
+   <name>solraid</name>
+   <groupId>solraid</groupId>
+   <artifactId>solraid</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <packaging>jar</packaging>
+   <build>
+      <pluginManagement>
+         <plugins>
+         </plugins>
+      </pluginManagement>
+   </build>
+   <dependencyManagement>
+      <dependencies>
+      </dependencies>
+   </dependencyManagement>
+   <distributionManagement>
+   </distributionManagement>
+</project>
