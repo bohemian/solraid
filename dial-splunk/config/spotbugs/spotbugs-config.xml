@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<FindBugsFilter>
+    <Match>
+        <!-- spotbugs doesn't work with java 14 record types -->
+        <Package name="io.atlassian.guard.commons.controller.model"/>
+    </Match>
+    <Match>
+        <Or>
+            <!-- Causes useless error when using multi-line strings (which have implicit newline characters) for format -->
+            <Bug code="FS" />
+        </Or>
+    </Match>
+</FindBugsFilter>

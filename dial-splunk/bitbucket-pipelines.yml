@@ -1,0 +1,94 @@
+image: gradle:8.8.0-jdk17
+
+aliases:
+  - &sidekick
+    pipe: atlassian/artifactory-sidekick:v1
+  - &setup_artifactory_script >
+    source .artifactory/activate.sh
+
+definitions:
+  steps:
+    - step: &build-guard-commons
+        name: Build and test guard-commons library
+        caches:
+          - gradle
+          - docker
+        services:
+          - docker
+        script:
+          - ./gradlew clean build
+        artifacts:
+          - build/**
+    - step: &publish-guard-commons
+        name: Publish library to Atlassian Repository
+        caches:
+          - gradle
+          - docker
+        services:
+          - docker
+        script:
+          - set -euf
+          - *sidekick
+          - *setup_artifactory_script
+          - ./gradlew publish -i
+        artifacts:
+          - build/**
+    - step: &publish-guard-commons-manual-approval
+        name: Publish library to Atlassian Repository
+        trigger: manual
+        caches:
+          - gradle
+          - docker
+        services:
+          - docker
+        script:
+          - set -euf
+          - *sidekick
+          - *setup_artifactory_script
+          - ./gradlew publish -i
+        artifacts:
+          - build/**
+    - step: &scan-snyk
+        name: Snyk dependencies vulnerability scan
+        caches:
+          - gradle
+          - docker
+        script:
+          - curl -fsSL --retry 5 "https://static.snyk.io/cli/latest/snyk-linux" -o snyk
+          - chmod +x snyk
+          - mv snyk /usr/local/bin
+          - *sidekick
+          - *setup_artifactory_script
+          - snyk monitor --all-sub-projects -d
+pipelines:
+  pull-requests:
+    "**":
+      - step: *build-guard-commons
+      - step: *scan-snyk
+  branches:
+    master:
+      - step: *build-guard-commons
+      - step: *scan-snyk
+      - step:
+          name: Check if library can be released
+          script:
+            - ./bin/non-snapshot-checker.sh
+      - step: *publish-guard-commons
+    testing:
+      - step: *build-guard-commons
+      - step: *scan-snyk
+  custom:
+    Release SNAPSHOT Library Version:
+      - step: *build-guard-commons
+      - step:
+          script:
+            - ./bin/snapshot-checker.sh
+      - step: *publish-guard-commons-manual-approval
+
+    Release Library Version:
+      - step: *build-guard-commons
+      - step: *scan-snyk
+      - step:
+          script:
+            - ./bin/non-snapshot-checker.sh
+      - step: *publish-guard-commons-manual-approval
